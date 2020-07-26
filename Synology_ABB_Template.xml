@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>4.4</version>
+    <date>2020-07-26T22:21:09Z</date>
+    <groups>
+        <group>
+            <name>Templates</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <template>Synology NAS Active Backup for Business template</template>
+            <name>Synology NAS Active Backup for Business template</name>
+            <groups>
+                <group>
+                    <name>Templates</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>Active Backup for Business</name>
+                </application>
+            </applications>
+            <discovery_rules>
+                <discovery_rule>
+                    <name>Active Backup for Business task discovery</name>
+                    <type>SSH</type>
+                    <key>ssh.run[ActiveBackupDiscovery,{HOST.IP},22,]</key>
+                    <delay>1h</delay>
+                    <params>cat {$PATH_ACTIVEBACKUP_CSV}</params>
+                    <username>{$SSH_USERNAME}</username>
+                    <password>{$SSH_PASSWORD}</password>
+                    <lifetime>1d</lifetime>
+                    <description>This discovery rule will discover all backup tasks in Active Backup for Business</description>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>Backup '{#DEVICE.NAME}' - Status</name>
+                            <type>SSH</type>
+                            <key>ssh.run[{#DEVICE.NAME},{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.NAME}&quot;) { print $2 } }' {$PATH_ACTIVEBACKUP_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <description>This item gets the status of the backup task from the CSV file.&#13;
+1 = In progress&#13;
+2 = Successful&#13;
+3 = Cancelled&#13;
+4 = Failed&#13;
+5 = Warning&#13;
+8 = Partial success</description>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last(0)}&gt;3</expression>
+                                    <name>Backup operation error '{#DEVICE.NAME}'</name>
+                                    <opdata>Current status: {ITEM.LASTVALUE}</opdata>
+                                    <priority>WARNING</priority>
+                                    <manual_close>YES</manual_close>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>Backup '{#DEVICE.NAME}' - Transferred data</name>
+                            <type>SSH</type>
+                            <key>ssh.run[{#DEVICE.NAME}.datatransfer,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <units>B</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.NAME}&quot;) { print $3 } }' {$PATH_ACTIVEBACKUP_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>Backup '{#DEVICE.NAME}' - End time</name>
+                            <type>SSH</type>
+                            <key>ssh.run[{#DEVICE.NAME}.end.time,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <units>unixtime</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.NAME}&quot;) { print $5 } }' {$PATH_ACTIVEBACKUP_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>Backup '{#DEVICE.NAME}' - Start time</name>
+                            <type>SSH</type>
+                            <key>ssh.run[{#DEVICE.NAME}.start.time,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <units>unixtime</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.NAME}&quot;) { print $4 } }' {$PATH_ACTIVEBACKUP_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                        </item_prototype>
+                    </item_prototypes>
+                    <lld_macro_paths>
+                        <lld_macro_path>
+                            <lld_macro>{#DEVICE.NAME}</lld_macro>
+                            <path>$.device_name</path>
+                        </lld_macro_path>
+                        <lld_macro_path>
+                            <lld_macro>{#DEVICE.STATUS}</lld_macro>
+                            <path>$.status</path>
+                        </lld_macro_path>
+                    </lld_macro_paths>
+                    <preprocessing>
+                        <step>
+                            <type>CSV_TO_JSON</type>
+                            <params>
+
+1</params>
+                        </step>
+                    </preprocessing>
+                </discovery_rule>
+            </discovery_rules>
+            <macros>
+                <macro>
+                    <macro>{$PATH_ACTIVEBACKUP_CSV}</macro>
+                    <description>Path to Active Backup CSV export file</description>
+                </macro>
+                <macro>
+                    <macro>{$SSH_PASSWORD}</macro>
+                    <description>Synology SSH password</description>
+                </macro>
+                <macro>
+                    <macro>{$SSH_USERNAME}</macro>
+                    <description>Synology SSH username</description>
+                </macro>
+            </macros>
+        </template>
+    </templates>
+    <value_maps>
+        <value_map>
+            <name>Synology Active Backup for Business</name>
+            <mappings>
+                <mapping>
+                    <value>1</value>
+                    <newvalue>In progress</newvalue>
+                </mapping>
+                <mapping>
+                    <value>2</value>
+                    <newvalue>Successful</newvalue>
+                </mapping>
+                <mapping>
+                    <value>3</value>
+                    <newvalue>Cancelled</newvalue>
+                </mapping>
+                <mapping>
+                    <value>4</value>
+                    <newvalue>Failed</newvalue>
+                </mapping>
+                <mapping>
+                    <value>5</value>
+                    <newvalue>Warning</newvalue>
+                </mapping>
+                <mapping>
+                    <value>8</value>
+                    <newvalue>Partial success</newvalue>
+                </mapping>
+            </mappings>
+        </value_map>
+    </value_maps>
+</zabbix_export>
