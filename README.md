@@ -19,6 +19,9 @@
 
 * Let this scheduled task run every 10mins (adjust as you wish)
 
+*Synology scheduled tasks: https://www.synology.com/en-global/knowledgebase/DSM/help/DSM/AdminCenter/system_taskscheduler*
+
+
 ### Zabbix configuration
 * Import value mapping - **Synology_ABB_ValueMapping.xml**
 * Import template - **Synology_ABB_Template.xml**
