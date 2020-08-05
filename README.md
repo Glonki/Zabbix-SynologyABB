@@ -1,7 +1,7 @@
 # Zabbix - Synology Active Backup for Business task monitoring
 
 ## Features
-* Discovery of all backup tasks
+* Discovery of all backup tasks (VM, Physical server, SMB and PC)
 * Item - Status of backup task
 * Item - Transferred bytes
 * Item - Start time backup
@@ -15,7 +15,10 @@
 * Enable SSH on Synology 
 * Create the scheduled task on your Synology that exports data from the Active Backup for Business database to a CSV file, paste this command in the task (change paths in bold to Active Backup location and location for exported CSV file):
 
->*sqlite3 -header -csv **/volume/@ActiveBackup/activity.db** "select device_name, status, transfered_bytes, time_start, time_end  from (SELECT * FROM device_result_table ORDER BY device_name) GROUP BY device_name;" | awk '{gsub(/\"/,"")};1' > **/volume/share/ActiveBackupExport.csv***
+>*sqlite3 -header -csv **/volumeX/@ActiveBackup/activity.db** "select config_device_id, device_name, status, transfered_bytes, time_start, time_end  from (SELECT * FROM device_result_table ORDER BY config_device_id) GROUP BY config_device_id;" | awk '{gsub(/\"/,"")};1' > **/volumeX/sharename/ActiveBackupExport.csv***
+>
+>*sqlite3 -header -csv **/volumeX/@ActiveBackup/config.db** "select device_id, host_name, backup_type from device_table" | awk '{gsub(/\"/,"")};1' > **/volumeX/Server/ActiveBackupHostExport.csv***
+
 
 * Let this scheduled task run every 10mins (adjust as you wish)
 
