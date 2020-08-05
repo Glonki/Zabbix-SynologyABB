@@ -13,7 +13,7 @@
 ### Synology configuration
 
 * Enable SSH on Synology 
-* Create the scheduled task on your Synology that exports data from the Active Backup for Business database to a CSV file, paste this command in the task (change paths in bold to Active Backup location and location for exported CSV file):
+* Create the scheduled task on your Synology that exports data from the Active Backup for Business database to a CSV file, paste the two commands in the task (change paths in bold to Active Backup/config location and location for exported CSV files):
 
 >*sqlite3 -header -csv **/volumeX/@ActiveBackup/activity.db** "select config_device_id, device_name, status, transfered_bytes, time_start, time_end  from (SELECT * FROM device_result_table ORDER BY config_device_id) GROUP BY config_device_id;" | awk '{gsub(/\"/,"")};1' > **/volumeX/sharename/ActiveBackupExport.csv***
 >
