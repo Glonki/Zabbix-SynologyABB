@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>4.4</version>
-    <date>2020-07-26T22:21:09Z</date>
+    <date>2020-08-05T06:44:57Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -23,23 +23,32 @@
             </applications>
             <discovery_rules>
                 <discovery_rule>
-                    <name>Active Backup for Business task discovery</name>
+                    <name>Active Backup for Business VM task discovery</name>
                     <type>SSH</type>
                     <key>ssh.run[ActiveBackupDiscovery,{HOST.IP},22,]</key>
                     <delay>1h</delay>
-                    <params>cat {$PATH_ACTIVEBACKUP_CSV}</params>
+                    <params>cat {$PATH_ACTIVEBACKUPHOST_CSV}</params>
                     <username>{$SSH_USERNAME}</username>
                     <password>{$SSH_PASSWORD}</password>
+                    <filter>
+                        <conditions>
+                            <condition>
+                                <macro>{#BACKUP.TYPE}</macro>
+                                <value>1</value>
+                                <formulaid>A</formulaid>
+                            </condition>
+                        </conditions>
+                    </filter>
                     <lifetime>1d</lifetime>
-                    <description>This discovery rule will discover all backup tasks in Active Backup for Business</description>
+                    <description>This discovery rule will discover all VM backup tasks in Active Backup for Business</description>
                     <item_prototypes>
                         <item_prototype>
-                            <name>Backup '{#DEVICE.NAME}' - Status</name>
+                            <name>VM Backup '{#DEVICE.NAME}'  - Status</name>
                             <type>SSH</type>
-                            <key>ssh.run[{#DEVICE.NAME},{HOST.IP},22,]</key>
+                            <key>ssh.run[vm.backup.{#DEVICE.NAME},{HOST.IP},22,]</key>
                             <delay>10m</delay>
                             <history>7d</history>
-                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.NAME}&quot;) { print $2 } }' {$PATH_ACTIVEBACKUP_CSV}</params>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $3 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
                             <username>{$SSH_USERNAME}</username>
                             <password>{$SSH_PASSWORD}</password>
                             <description>This item gets the status of the backup task from the CSV file.&#13;
@@ -60,21 +69,26 @@
                             <trigger_prototypes>
                                 <trigger_prototype>
                                     <expression>{last(0)}&gt;3</expression>
-                                    <name>Backup operation error '{#DEVICE.NAME}'</name>
-                                    <opdata>Current status: {ITEM.LASTVALUE}</opdata>
+                                    <name>VM Backup operation error '{#DEVICE.NAME}'</name>
+                                    <opdata>Last status: {ITEM.LASTVALUE}</opdata>
                                     <priority>WARNING</priority>
                                     <manual_close>YES</manual_close>
+                                    <tags>
+                                        <tag>
+                                            <tag>BACKUP</tag>
+                                        </tag>
+                                    </tags>
                                 </trigger_prototype>
                             </trigger_prototypes>
                         </item_prototype>
                         <item_prototype>
-                            <name>Backup '{#DEVICE.NAME}' - Transferred data</name>
+                            <name>VM Backup '{#DEVICE.NAME}' - Transferred data</name>
                             <type>SSH</type>
-                            <key>ssh.run[{#DEVICE.NAME}.datatransfer,{HOST.IP},22,]</key>
+                            <key>ssh.run[vm.backup.{#DEVICE.NAME}.datatransfer,{HOST.IP},22,]</key>
                             <delay>10m</delay>
                             <history>7d</history>
                             <units>B</units>
-                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.NAME}&quot;) { print $3 } }' {$PATH_ACTIVEBACKUP_CSV}</params>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $4 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
                             <username>{$SSH_USERNAME}</username>
                             <password>{$SSH_PASSWORD}</password>
                             <applications>
@@ -84,13 +98,13 @@
                             </applications>
                         </item_prototype>
                         <item_prototype>
-                            <name>Backup '{#DEVICE.NAME}' - End time</name>
+                            <name>VM Backup '{#DEVICE.NAME}' - End time</name>
                             <type>SSH</type>
-                            <key>ssh.run[{#DEVICE.NAME}.end.time,{HOST.IP},22,]</key>
+                            <key>ssh.run[vm.backup.{#DEVICE.NAME}.end.time,{HOST.IP},22,]</key>
                             <delay>10m</delay>
                             <history>7d</history>
                             <units>unixtime</units>
-                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.NAME}&quot;) { print $5 } }' {$PATH_ACTIVEBACKUP_CSV}</params>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.NAME}&quot;) { print $6 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
                             <username>{$SSH_USERNAME}</username>
                             <password>{$SSH_PASSWORD}</password>
                             <applications>
@@ -100,13 +114,13 @@
                             </applications>
                         </item_prototype>
                         <item_prototype>
-                            <name>Backup '{#DEVICE.NAME}' - Start time</name>
+                            <name>VM Backup '{#DEVICE.NAME}' - Start time</name>
                             <type>SSH</type>
-                            <key>ssh.run[{#DEVICE.NAME}.start.time,{HOST.IP},22,]</key>
+                            <key>ssh.run[vm.backup.{#DEVICE.NAME}.start.time,{HOST.IP},22,]</key>
                             <delay>10m</delay>
                             <history>7d</history>
                             <units>unixtime</units>
-                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.NAME}&quot;) { print $4 } }' {$PATH_ACTIVEBACKUP_CSV}</params>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $5 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
                             <username>{$SSH_USERNAME}</username>
                             <password>{$SSH_PASSWORD}</password>
                             <applications>
@@ -118,12 +132,414 @@
                     </item_prototypes>
                     <lld_macro_paths>
                         <lld_macro_path>
-                            <lld_macro>{#DEVICE.NAME}</lld_macro>
-                            <path>$.device_name</path>
+                            <lld_macro>{#BACKUP.TYPE}</lld_macro>
+                            <path>$.backup_type</path>
                         </lld_macro_path>
                         <lld_macro_path>
-                            <lld_macro>{#DEVICE.STATUS}</lld_macro>
-                            <path>$.status</path>
+                            <lld_macro>{#DEVICE.ID}</lld_macro>
+                            <path>$.device_id</path>
+                        </lld_macro_path>
+                        <lld_macro_path>
+                            <lld_macro>{#DEVICE.NAME}</lld_macro>
+                            <path>$.host_name</path>
+                        </lld_macro_path>
+                    </lld_macro_paths>
+                    <preprocessing>
+                        <step>
+                            <type>CSV_TO_JSON</type>
+                            <params>
+
+1</params>
+                        </step>
+                    </preprocessing>
+                </discovery_rule>
+                <discovery_rule>
+                    <name>Active Backup for Business PC task discovery</name>
+                    <type>SSH</type>
+                    <key>ssh.run[ActiveBackupDiscoveryPC,{HOST.IP},22,]</key>
+                    <delay>1h</delay>
+                    <params>cat {$PATH_ACTIVEBACKUPHOST_CSV}</params>
+                    <username>{$SSH_USERNAME}</username>
+                    <password>{$SSH_PASSWORD}</password>
+                    <filter>
+                        <conditions>
+                            <condition>
+                                <macro>{#BACKUP.TYPE}</macro>
+                                <value>2</value>
+                                <formulaid>A</formulaid>
+                            </condition>
+                        </conditions>
+                    </filter>
+                    <lifetime>1d</lifetime>
+                    <description>This discovery rule will discover all PC backup tasks in Active Backup for Business</description>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>PC Backup '{#DEVICE.NAME}'  - Status</name>
+                            <type>SSH</type>
+                            <key>ssh.run[pc.backup.{#DEVICE.NAME},{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $3 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last(0)}&gt;3</expression>
+                                    <name>PC Backup operation error '{#DEVICE.NAME}'</name>
+                                    <opdata>Last status: {ITEM.LASTVALUE}</opdata>
+                                    <priority>WARNING</priority>
+                                    <manual_close>YES</manual_close>
+                                    <tags>
+                                        <tag>
+                                            <tag>BACKUP</tag>
+                                        </tag>
+                                    </tags>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>PC Backup '{#DEVICE.NAME}' - Transferred data</name>
+                            <type>SSH</type>
+                            <key>ssh.run[pc.backup.{#DEVICE.NAME}.datatransfer,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <units>B</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $4 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>PC Backup '{#DEVICE.NAME}' - End time</name>
+                            <type>SSH</type>
+                            <key>ssh.run[pc.backup.{#DEVICE.NAME}.end.time,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <units>unixtime</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $6 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>PC Backup '{#DEVICE.NAME}' - Start time</name>
+                            <type>SSH</type>
+                            <key>ssh.run[pc.backup.{#DEVICE.NAME}.start.time,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <units>unixtime</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $5 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                        </item_prototype>
+                    </item_prototypes>
+                    <lld_macro_paths>
+                        <lld_macro_path>
+                            <lld_macro>{#BACKUP.TYPE}</lld_macro>
+                            <path>$.backup_type</path>
+                        </lld_macro_path>
+                        <lld_macro_path>
+                            <lld_macro>{#DEVICE.ID}</lld_macro>
+                            <path>$.device_id</path>
+                        </lld_macro_path>
+                        <lld_macro_path>
+                            <lld_macro>{#DEVICE.NAME}</lld_macro>
+                            <path>$.host_name</path>
+                        </lld_macro_path>
+                    </lld_macro_paths>
+                    <preprocessing>
+                        <step>
+                            <type>CSV_TO_JSON</type>
+                            <params>
+
+1</params>
+                        </step>
+                    </preprocessing>
+                </discovery_rule>
+                <discovery_rule>
+                    <name>Active Backup for Business Physical Server task discovery</name>
+                    <type>SSH</type>
+                    <key>ssh.run[ActiveBackupDiscoveryPS,{HOST.IP},22,]</key>
+                    <delay>1h</delay>
+                    <params>cat {$PATH_ACTIVEBACKUPHOST_CSV}</params>
+                    <username>{$SSH_USERNAME}</username>
+                    <password>{$SSH_PASSWORD}</password>
+                    <filter>
+                        <conditions>
+                            <condition>
+                                <macro>{#BACKUP.TYPE}</macro>
+                                <value>3</value>
+                                <formulaid>A</formulaid>
+                            </condition>
+                        </conditions>
+                    </filter>
+                    <lifetime>1d</lifetime>
+                    <description>This discovery rule will discover all physical server backup tasks in Active Backup for Business</description>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>Physical Server Backup '{#DEVICE.NAME}'  - Status</name>
+                            <type>SSH</type>
+                            <key>ssh.run[ps.backup.{#DEVICE.NAME},{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $3 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last(0)}&gt;3</expression>
+                                    <name>Physical Server Backup operation error '{#DEVICE.NAME}'</name>
+                                    <opdata>Last status: {ITEM.LASTVALUE}</opdata>
+                                    <priority>WARNING</priority>
+                                    <manual_close>YES</manual_close>
+                                    <tags>
+                                        <tag>
+                                            <tag>BACKUP</tag>
+                                        </tag>
+                                    </tags>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>Physical Server Backup '{#DEVICE.NAME}' - Transferred data</name>
+                            <type>SSH</type>
+                            <key>ssh.run[ps.backup.{#DEVICE.NAME}.datatransfer,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <units>B</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $4 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>Physical Server Backup '{#DEVICE.NAME}' - End time</name>
+                            <type>SSH</type>
+                            <key>ssh.run[ps.backup.{#DEVICE.NAME}.end.time,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <units>unixtime</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $6 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>Physical Server Backup '{#DEVICE.NAME}' - Start time</name>
+                            <type>SSH</type>
+                            <key>ssh.run[ps.backup.{#DEVICE.NAME}.start.time,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <units>unixtime</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $5 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                        </item_prototype>
+                    </item_prototypes>
+                    <lld_macro_paths>
+                        <lld_macro_path>
+                            <lld_macro>{#BACKUP.TYPE}</lld_macro>
+                            <path>$.backup_type</path>
+                        </lld_macro_path>
+                        <lld_macro_path>
+                            <lld_macro>{#DEVICE.ID}</lld_macro>
+                            <path>$.device_id</path>
+                        </lld_macro_path>
+                        <lld_macro_path>
+                            <lld_macro>{#DEVICE.NAME}</lld_macro>
+                            <path>$.host_name</path>
+                        </lld_macro_path>
+                    </lld_macro_paths>
+                    <preprocessing>
+                        <step>
+                            <type>CSV_TO_JSON</type>
+                            <params>
+
+1</params>
+                        </step>
+                    </preprocessing>
+                </discovery_rule>
+                <discovery_rule>
+                    <name>Active Backup for Business SMB task discovery</name>
+                    <type>SSH</type>
+                    <key>ssh.run[ActiveBackupDiscoverySMB,{HOST.IP},22,]</key>
+                    <delay>1h</delay>
+                    <params>cat {$PATH_ACTIVEBACKUPHOST_CSV}</params>
+                    <username>{$SSH_USERNAME}</username>
+                    <password>{$SSH_PASSWORD}</password>
+                    <filter>
+                        <conditions>
+                            <condition>
+                                <macro>{#BACKUP.TYPE}</macro>
+                                <value>4</value>
+                                <formulaid>A</formulaid>
+                            </condition>
+                        </conditions>
+                    </filter>
+                    <lifetime>1d</lifetime>
+                    <description>This discovery rule will discover all SMB backup tasks in Active Backup for Business</description>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>SMB Backup '{#DEVICE.NAME}'  - Status</name>
+                            <type>SSH</type>
+                            <key>ssh.run[smb.backup.{#DEVICE.NAME},{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $3 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last(0)}&gt;3</expression>
+                                    <name>SMB Backup operation error '{#DEVICE.NAME}'</name>
+                                    <opdata>Last status: {ITEM.LASTVALUE}</opdata>
+                                    <priority>WARNING</priority>
+                                    <manual_close>YES</manual_close>
+                                    <tags>
+                                        <tag>
+                                            <tag>BACKUP</tag>
+                                        </tag>
+                                    </tags>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>SMB Backup '{#DEVICE.NAME}' - Transferred data</name>
+                            <type>SSH</type>
+                            <key>ssh.run[smb.backup.{#DEVICE.NAME}.datatransfer,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <units>B</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $4 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>SMB Backup '{#DEVICE.NAME}' - End time</name>
+                            <type>SSH</type>
+                            <key>ssh.run[smb.backup.{#DEVICE.NAME}.end.time,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <units>unixtime</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $6 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>SMB Backup '{#DEVICE.NAME}' - Start time</name>
+                            <type>SSH</type>
+                            <key>ssh.run[smb.backup.{#DEVICE.NAME}.start.time,{HOST.IP},22,]</key>
+                            <delay>10m</delay>
+                            <history>7d</history>
+                            <units>unixtime</units>
+                            <params>awk -F',' '{ if ($1 == &quot;{#DEVICE.ID}&quot;) { print $5 } }' {$PATH_ACTIVEBACKUPRESULT_CSV}</params>
+                            <username>{$SSH_USERNAME}</username>
+                            <password>{$SSH_PASSWORD}</password>
+                            <applications>
+                                <application>
+                                    <name>Active Backup for Business</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Synology Active Backup for Business</name>
+                            </valuemap>
+                        </item_prototype>
+                    </item_prototypes>
+                    <lld_macro_paths>
+                        <lld_macro_path>
+                            <lld_macro>{#BACKUP.TYPE}</lld_macro>
+                            <path>$.backup_type</path>
+                        </lld_macro_path>
+                        <lld_macro_path>
+                            <lld_macro>{#DEVICE.ID}</lld_macro>
+                            <path>$.device_id</path>
+                        </lld_macro_path>
+                        <lld_macro_path>
+                            <lld_macro>{#DEVICE.NAME}</lld_macro>
+                            <path>$.host_name</path>
                         </lld_macro_path>
                     </lld_macro_paths>
                     <preprocessing>
@@ -138,7 +554,11 @@
             </discovery_rules>
             <macros>
                 <macro>
-                    <macro>{$PATH_ACTIVEBACKUP_CSV}</macro>
+                    <macro>{$PATH_ACTIVEBACKUPHOST_CSV}</macro>
+                    <description>Path to Active Backup Host export file</description>
+                </macro>
+                <macro>
+                    <macro>{$PATH_ACTIVEBACKUPRESULT_CSV}</macro>
                     <description>Path to Active Backup CSV export file</description>
                 </macro>
                 <macro>
